@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rezapp phone demo</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center;
+         font-family: system-ui, -apple-system, "Segoe UI", sans-serif; user-select: none; -webkit-user-select: none; }
+
+  #phone { position: relative; touch-action: none; }
+  #phone img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill;
+               opacity: 0; transition: opacity .18s ease; pointer-events: none; }
+  #phone img.on { opacity: 1; }
+
+  .hot { position: absolute; cursor: pointer; border-radius: 6px; -webkit-tap-highlight-color: transparent; }
+  .hot.flash { animation: flash .35s ease-out; }
+  @keyframes flash { from { background: rgba(255,255,255,.45); } to { background: transparent; } }
+
+  /* hint outlines (press H) and edit mode */
+  body.hints .hot, body.edit .hot { outline: 3px dashed rgba(255,200,0,.9); background: rgba(255,200,0,.12); }
+
+  /* edit tools */
+  #bar { position: fixed; top: 0; left: 0; right: 0; display: none; gap: 8px; align-items: center; flex-wrap: wrap;
+         padding: 8px 12px; background: #1b1b1b; color: #eee; font-size: 14px; z-index: 10; }
+  body.edit #bar { display: flex; }
+  #bar button, #dlg button, #io button { font: inherit; padding: 5px 12px; border-radius: 6px; border: 1px solid #555;
+         background: #2b2b2b; color: #fff; cursor: pointer; }
+  #bar button:hover, #dlg button:hover, #io button:hover { background: #3a3a3a; }
+  #bar b { color: #ffc800; }
+  #list { position: fixed; right: 0; top: 48px; bottom: 0; width: 260px; overflow: auto; background: #151515; color: #ddd;
+          font-size: 13px; padding: 10px; display: none; z-index: 9; }
+  body.edit #list { display: block; }
+  #list div { display: flex; justify-content: space-between; gap: 6px; padding: 4px 0; border-bottom: 1px solid #2a2a2a; }
+  #list button { background: none; border: 0; color: #ff7b7b; cursor: pointer; font-size: 13px; }
+  #list h4 { margin: 0 0 6px; font-weight: 600; color: #fff; }
+  #draw { position: absolute; border: 2px solid #4ad; background: rgba(60,170,220,.25); display: none; }
+
+  #dlg { position: fixed; display: none; background: #1b1b1b; color: #eee; padding: 12px; border-radius: 8px; z-index: 20;
+         box-shadow: 0 6px 24px rgba(0,0,0,.6); font-size: 14px; }
+  #dlg select { font: inherit; padding: 5px; margin: 6px 0 10px; width: 100%; }
+  #io { position: fixed; inset: 20% 20%; display: none; flex-direction: column; gap: 8px; background: #1b1b1b; padding: 14px;
+        border-radius: 8px; z-index: 30; color: #eee; }
+  #io textarea { flex: 1; font: 12px ui-monospace, monospace; background: #0d0d0d; color: #ddd; border: 1px solid #444; }
+  #toast { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 8px 14px;
+           border-radius: 6px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 40; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="phone"><div id="draw"></div></div>
+
+<div id="bar">
+  <b>Edit mode</b>
+  <span>Drag a box over a button, then choose the screen it opens.</span>
+  <button id="prev">&larr; Prev screen</button>
+  <span id="cur"></span>
+  <button id="next">Next screen &rarr;</button>
+  <button id="exp">Export / import</button>
+  <button id="done">Done (E)</button>
+</div>
+<div id="list"></div>
+
+<div id="dlg">
+  <div>This button opens:</div>
+  <select id="target"></select>
+  <div style="display:flex; gap:8px; justify-content:flex-end">
+    <button id="cancel">Cancel</button><button id="ok">Save button</button>
+  </div>
+</div>
+
+<div id="io">
+  <div>Copy this to back up your buttons, or paste a saved version and choose Load.</div>
+  <textarea id="json" spellcheck="false"></textarea>
+  <div style="display:flex; gap:8px; justify-content:flex-end">
+    <button id="load">Load</button><button id="copy">Copy</button><button id="close">Close</button>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ---------------------------------------------------------------
+   SETTINGS
+   --------------------------------------------------------------- */
+const IDLE_SECONDS = 90;        // return to the first screen after this much inactivity. 0 = never.
+const START = 'home';           // first screen
+
+/* Screens, in the order they appear on your Wix page.
+   To use your own files instead, replace any src with a local path, e.g. "screens/home.png". */
+const W = id => 'https://static.wixstatic.com/media/' + id;
+const SCREENS = [
+  { id: 'home',  name: 'Home / login',   src: W('c2a0bb_e25b05499a064d9f93e09478ce69abeb~mv2.jpg') },
+  { id: 's1',    name: 'Screen 1',       src: W('c2a0bb_3da086a326024430ac47905a45b3bd66~mv2.png') },
+  { id: 's2',    name: 'Screen 2',       src: W('c2a0bb_5867176c58ab401e801eff30fec10cea~mv2.png') },
+  { id: 's3',    name: 'Screen 3',       src: W('c2a0bb_90a51d50fb6648abab31f09ef98e4dd8~mv2.png') },
+  { id: 's4',    name: 'Screen 4',       src: W('c2a0bb_6846a841306e450e9abac2257b80bbe1~mv2.jpg') },
+  { id: 's6',    name: 'Screen 6',       src: W('c2a0bb_770a0d2bf0c846febe0adb0442ede9c6~mv2.png') },
+  { id: 's7',    name: 'Screen 7',       src: W('c2a0bb_e8004377c3f2483fbff5b18720bab80c~mv2.jpg') },
+  { id: 's8',    name: 'Screen 8',       src: W('c2a0bb_115021225c6e439790f145db0f6a3a93~mv2.jpg') },
+  { id: 's9',    name: 'Screen 9',       src: W('c2a0bb_3864be9dfdb04d9eb403d9eab7c0b933~mv2.jpg') },
+  { id: 's10',   name: 'Screen 10',      src: W('c2a0bb_db903cc87a2b4f0ab4e9cbe8da6ed380~mv2.jpg') },
+  { id: 's11',   name: 'Screen 11',      src: W('c2a0bb_ce5de23315ae4ca398d10e93f7613939~mv2.jpg') },
+  { id: 's12',   name: 'Screen 12',      src: W('c2a0bb_cac3702d2501459b8dee91e4aae4f425~mv2.jpg') },
+  { id: 's13',   name: 'Screen 13',      src: W('c2a0bb_a5893ec0af68410d808d5878ea6097cc~mv2.jpg') },
+  { id: 's14',   name: 'Screen 14',      src: W('c2a0bb_8b568db07b65464bb25a670fac5c204a~mv2.jpg') },
+];
+
+/* Clickable areas, as percentages of the screen: x, y = top-left corner, w, h = size, to = screen id.
+   You normally don't edit this by hand: press E, draw the boxes, then use Export to paste the result here. */
+const DEFAULT_HOTSPOTS = {
+  // home: [ { x: 20, y: 70, w: 60, h: 8, to: 's1' } ],
+};
+
+/* ---------------------------------------------------------------
+   CODE
+   --------------------------------------------------------------- */
+const KEY = 'rezapp-demo-hotspots-v1';
+const phone = document.getElementById('phone');
+const drawBox = document.getElementById('draw');
+const byId = Object.fromEntries(SCREENS.map(s => [s.id, s]));
+let hotspots = loadHotspots();
+let current = START, history = [], ratio = 1256 / 600, idleTimer;
+
+function loadHotspots() {
+  try { const t = localStorage.getItem(KEY); if (t) return JSON.parse(t); } catch (e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_HOTSPOTS));
+}
+function saveHotspots() { try { localStorage.setItem(KEY, JSON.stringify(hotspots)); } catch (e) {} }
+
+/* images: one <img> per screen, stacked, so switching is instant and cross-fades */
+const imgs = {};
+SCREENS.forEach(s => {
+  const im = new Image(); im.alt = s.name; im.src = s.src; im.decoding = 'async';
+  phone.insertBefore(im, drawBox); imgs[s.id] = im;
+});
+imgs[START].addEventListener('load', () => { ratio = imgs[START].naturalHeight / imgs[START].naturalWidth; fit(); });
+
+/* size the phone to fill the screen height (or width) without cropping */
+function fit() {
+  const vw = innerWidth, vh = innerHeight;
+  let h = vh, w = h / ratio;
+  if (w > vw) { w = vw; h = w * ratio; }
+  phone.style.width = w + 'px'; phone.style.height = h + 'px';
+}
+addEventListener('resize', fit); fit();
+
+function show(id, push = true) {
+  if (!byId[id]) return;
+  if (push && id !== current) history.push(current);
+  current = id;
+  SCREENS.forEach(s => imgs[s.id].classList.toggle('on', s.id === id));
+  const im = imgs[id];
+  const setRatio = () => { if (im.naturalWidth) { ratio = im.naturalHeight / im.naturalWidth; fit(); } };
+  im.complete ? setRatio() : im.addEventListener('load', setRatio, { once: true });
+  renderHot(); renderList();
+  document.getElementById('cur').textContent = byId[id].name;
+  bumpIdle();
+}
+
+function renderHot() {
+  phone.querySelectorAll('.hot').forEach(n => n.remove());
+  (hotspots[current] || []).forEach((h, i) => {
+    const d = document.createElement('div');
+    d.className = 'hot';
+    Object.assign(d.style, { left: h.x + '%', top: h.y + '%', width: h.w + '%', height: h.h + '%' });
+    d.dataset.i = i;
+    d.addEventListener('click', e => {
+      if (document.body.classList.contains('edit')) return;
+      d.classList.remove('flash'); void d.offsetWidth; d.classList.add('flash');
+      show(h.to);
+    });
+    phone.appendChild(d);
+  });
+}
+
+/* going back: Backspace / Escape / Left arrow, or the Home key */
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  const k = e.key.toLowerCase();
+  if (k === 'e') toggleEdit();
+  else if (k === 'h') document.body.classList.toggle('hints');
+  else if (k === 'backspace' || k === 'escape' || k === 'arrowleft') { if (history.length) show(history.pop(), false); }
+  else if (k === 'home') { history = []; show(START, false); }
+});
+
+/* idle reset for the booth */
+function bumpIdle() {
+  clearTimeout(idleTimer);
+  if (IDLE_SECONDS > 0 && !document.body.classList.contains('edit'))
+    idleTimer = setTimeout(() => { history = []; show(START, false); }, IDLE_SECONDS * 1000);
+}
+['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, bumpIdle));
+
+/* ------------------ edit mode ------------------ */
+const dlg = document.getElementById('dlg'), target = document.getElementById('target');
+let pending = null;
+
+function toggleEdit() {
+  document.body.classList.toggle('edit');
+  document.body.classList.remove('hints');
+  bumpIdle(); renderList();
+}
+document.getElementById('done').onclick = toggleEdit;
+document.getElementById('prev').onclick = () => step(-1);
+document.getElementById('next').onclick = () => step(1);
+function step(d) {
+  const i = SCREENS.findIndex(s => s.id === current);
+  show(SCREENS[(i + d + SCREENS.length) % SCREENS.length].id, false);
+}
+SCREENS.forEach(s => target.add(new Option(s.name, s.id)));
+
+phone.addEventListener('pointerdown', e => {
+  if (!document.body.classList.contains('edit') || e.target.classList.contains('hot')) return;
+  const r = phone.getBoundingClientRect();
+  const x0 = e.clientX - r.left, y0 = e.clientY - r.top;
+  phone.setPointerCapture(e.pointerId);
+  const move = ev => {
+    const x1 = Math.min(Math.max(ev.clientX - r.left, 0), r.width), y1 = Math.min(Math.max(ev.clientY - r.top, 0), r.height);
+    Object.assign(drawBox.style, { display: 'block', left: Math.min(x0, x1) + 'px', top: Math.min(y0, y1) + 'px',
+      width: Math.abs(x1 - x0) + 'px', height: Math.abs(y1 - y0) + 'px' });
+  };
+  const up = ev => {
+    phone.removeEventListener('pointermove', move); phone.removeEventListener('pointerup', up);
+    const bw = parseFloat(drawBox.style.width), bh = parseFloat(drawBox.style.height);
+    if (bw > 8 && bh > 8) {
+      pending = {
+        x: +(parseFloat(drawBox.style.left) / r.width * 100).toFixed(2), y: +(parseFloat(drawBox.style.top) / r.height * 100).toFixed(2),
+        w: +(bw / r.width * 100).toFixed(2), h: +(bh / r.height * 100).toFixed(2)
+      };
+      const idx = SCREENS.findIndex(s => s.id === current);
+      target.value = SCREENS[Math.min(idx + 1, SCREENS.length - 1)].id;   // suggest the next screen
+      dlg.style.display = 'block';
+      dlg.style.left = Math.min(ev.clientX + 10, innerWidth - 260) + 'px';
+      dlg.style.top = Math.min(ev.clientY + 10, innerHeight - 140) + 'px';
+    } else drawBox.style.display = 'none';
+  };
+  phone.addEventListener('pointermove', move); phone.addEventListener('pointerup', up);
+});
+document.getElementById('ok').onclick = () => {
+  if (pending) { (hotspots[current] = hotspots[current] || []).push({ ...pending, to: target.value }); saveHotspots(); }
+  closeDlg(); renderHot(); renderList();
+};
+document.getElementById('cancel').onclick = closeDlg;
+function closeDlg() { pending = null; dlg.style.display = 'none'; drawBox.style.display = 'none'; }
+
+function renderList() {
+  const el = document.getElementById('list');
+  const hs = hotspots[current] || [];
+  el.innerHTML = '<h4>Buttons on this screen</h4>' + (hs.length ? '' : '<div style="color:#888">None yet</div>');
+  hs.forEach((h, i) => {
+    const row = document.createElement('div');
+    row.innerHTML = '<span>&rarr; ' + (byId[h.to] ? byId[h.to].name : h.to) + '</span>';
+    const b = document.createElement('button'); b.textContent = 'Delete';
+    b.onclick = () => { hs.splice(i, 1); saveHotspots(); renderHot(); renderList(); };
+    row.appendChild(b); el.appendChild(row);
+  });
+}
+
+/* export / import */
+const io = document.getElementById('io'), ta = document.getElementById('json');
+document.getElementById('exp').onclick = () => { ta.value = JSON.stringify(hotspots, null, 1); io.style.display = 'flex'; };
+document.getElementById('close').onclick = () => io.style.display = 'none';
+document.getElementById('copy').onclick = () => { ta.select(); try { document.execCommand('copy'); toast('Copied'); } catch (e) {} };
+document.getElementById('load').onclick = () => {
+  try { hotspots = JSON.parse(ta.value); saveHotspots(); renderHot(); renderList(); io.style.display = 'none'; toast('Loaded'); }
+  catch (e) { toast('That text is not valid'); }
+};
+function toast(t) { const n = document.getElementById('toast'); n.textContent = t; n.classList.add('show'); setTimeout(() => n.classList.remove('show'), 1500); }
+
+show(START, false);
+</script>
+</body>
+</html>
