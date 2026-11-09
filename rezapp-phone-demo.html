@@ -91,160 +91,26 @@ const START = 'home';           // first screen
    To use your own files instead, replace any src with a local path, e.g. "screens/home.png". */
 const W = id => 'https://static.wixstatic.com/media/' + id;
 const SCREENS = [
-  { id: 'home',  name: 'Home / login',   src: 'Screens/Home.jpg' },
-  { id: 's1',    name: 'Screen 1',       src: 'Screens/S1.jpg' },
-  { id: 's2',    name: 'Screen 2',       src: 'Screens/S2.jpg' },
-  { id: 's3',    name: 'Screen 3',       src: 'Screens/S3.jpg' },
-  { id: 's4',    name: 'Screen 4',       src: 'Screens/S4.jpg' },
-  { id: 's5',    name: 'Screen 5',       src: 'Screens/S5.jpg' },
-  { id: 's6',    name: 'Screen 6',       src: 'Screens/S6.jpg' },
-  { id: 's7',    name: 'Screen 7',       src: 'Screens/S7.jpg' },
-  { id: 's8',    name: 'Screen 8',       src: 'Screens/S8.jpg' },
-  { id: 's9',    name: 'Screen 9',       src: 'Screens/S9.jpg' },
-  { id: 's10',   name: 'Screen 10',      src: 'Screens/S10.jpg' },
-  { id: 's11',   name: 'Screen 11',      src: 'Screens/S11.jpg' },
-  { id: 's12',   name: 'Screen 12',      src: 'Screens/S12.jpg' },
-  { id: 's13',   name: 'Screen 13',      src: 'Screens/S13.jpg' },
-  { id: 's14',   name: 'Screen 14',      src: 'Screens/S14.jpg' },
-  { id: 's15',   name: 'Screen 15',      src: 'Screens/S15.jpg' },
-  { id: 's16',   name: 'Screen 16',      src: 'Screens/S16.jpg' },
-  { id: 's17',   name: 'Screen 17',      src: 'Screens/S17.jpg' },
-  { id: 's18',   name: 'Screen 18',      src: 'Screens/S18.jpg' },
-  { id: 's19',   name: 'Screen 19',      src: 'Screens/S19.jpg' },
-  { id: 's20',   name: 'Screen 20',      src: 'Screens/S20.jpg' },
-  { id: 's21',   name: 'Screen 21',      src: 'Screens/S21.jpg' },
+  { id: 'home',  name: 'Home / login',   src: W('c2a0bb_e25b05499a064d9f93e09478ce69abeb~mv2.jpg') },
+  { id: 's1',    name: 'Screen 1',       src: W('c2a0bb_3da086a326024430ac47905a45b3bd66~mv2.png') },
+  { id: 's2',    name: 'Screen 2',       src: W('c2a0bb_5867176c58ab401e801eff30fec10cea~mv2.png') },
+  { id: 's3',    name: 'Screen 3',       src: W('c2a0bb_90a51d50fb6648abab31f09ef98e4dd8~mv2.png') },
+  { id: 's4',    name: 'Screen 4',       src: W('c2a0bb_6846a841306e450e9abac2257b80bbe1~mv2.jpg') },
+  { id: 's6',    name: 'Screen 6',       src: W('c2a0bb_770a0d2bf0c846febe0adb0442ede9c6~mv2.png') },
+  { id: 's7',    name: 'Screen 7',       src: W('c2a0bb_e8004377c3f2483fbff5b18720bab80c~mv2.jpg') },
+  { id: 's8',    name: 'Screen 8',       src: W('c2a0bb_115021225c6e439790f145db0f6a3a93~mv2.jpg') },
+  { id: 's9',    name: 'Screen 9',       src: W('c2a0bb_3864be9dfdb04d9eb403d9eab7c0b933~mv2.jpg') },
+  { id: 's10',   name: 'Screen 10',      src: W('c2a0bb_db903cc87a2b4f0ab4e9cbe8da6ed380~mv2.jpg') },
+  { id: 's11',   name: 'Screen 11',      src: W('c2a0bb_ce5de23315ae4ca398d10e93f7613939~mv2.jpg') },
+  { id: 's12',   name: 'Screen 12',      src: W('c2a0bb_cac3702d2501459b8dee91e4aae4f425~mv2.jpg') },
+  { id: 's13',   name: 'Screen 13',      src: W('c2a0bb_a5893ec0af68410d808d5878ea6097cc~mv2.jpg') },
+  { id: 's14',   name: 'Screen 14',      src: W('c2a0bb_8b568db07b65464bb25a670fac5c204a~mv2.jpg') },
 ];
 
 /* Clickable areas, as percentages of the screen: x, y = top-left corner, w, h = size, to = screen id.
    You normally don't edit this by hand: press E, draw the boxes, then use Export to paste the result here. */
 const DEFAULT_HOTSPOTS = {
- "home": [
-  {
-   "x": 7.27,
-   "y": 10.95,
-   "w": 84.74,
-   "h": 7.6,
-   "to": "s1"
-  }
- ],
- "s10": [
-  {
- "home": [
-  {
-   "x": 7.75,
-   "y": 11.29,
-   "w": 84.02,
-   "h": 7.26,
-   "to": "s1"
-  },
-  {
-   "x": 7.51,
-   "y": 21.23,
-   "w": 84.5,
-   "h": 7.38,
-   "to": "s3"
-  },
-  {
-   "x": 7.75,
-   "y": 31.07,
-   "w": 84.26,
-   "h": 7.71,
-   "to": "s4"
-  },
-  {
-   "x": 7.75,
-   "y": 41.46,
-   "w": 84.26,
-   "h": 7.38,
-   "to": "s6"
-  }
- ],
- "s10": [
-  {
-   "x": 16.71,
-   "y": 28.5,
-   "w": 57.62,
-   "h": 19.78,
-   "to": "s11"
-  }
- ],
- "s1": [
-  {
-   "x": 15.5,
-   "y": 67.72,
-   "w": 26.39,
-   "h": 16.2,
-   "to": "home"
-  },
-  {
-   "x": 9.45,
-   "y": 20,
-   "w": 79.9,
-   "h": 36.76,
-   "to": "s3"
-  }
- ],
- "s2": [
-  {
-   "x": 7.03,
-   "y": 65.26,
-   "w": 85.47,
-   "h": 21.79,
-   "to": "home"
-  }
- ],
- "s3": [
-  {
-   "x": 2.42,
-   "y": 80.23,
-   "w": 33.17,
-   "h": 13.07,
-   "to": "home"
-  }
- ],
- "s4": [
-  {
-   "x": 75.55,
-   "y": 35.76,
-   "w": 17.19,
-   "h": 5.92,
-   "to": "s5"
-  }
- ],
- "s5": [
-  {
-   "x": 2.67,
-   "y": 80.57,
-   "w": 33.17,
-   "h": 12.63,
-   "to": "home"
-  }
- ],
- "s6": [
-  {
-   "x": 10.66,
-   "y": 20.12,
-   "w": 78.69,
-   "h": 36.54,
-   "to": "s7"
-  },
-  {
-   "x": 15.26,
-   "y": 67.83,
-   "w": 27.12,
-   "h": 15.98,
-   "to": "home"
-  }
- ],
- "s7": [
-  {
-   "x": 2.91,
-   "y": 80.57,
-   "w": 32.44,
-   "h": 12.63,
-   "to": "home"
-  }
- ]
+  // home: [ { x: 20, y: 70, w: 60, h: 8, to: 's1' } ],
 };
 
 /* ---------------------------------------------------------------
